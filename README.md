@@ -27,7 +27,7 @@ Get the latest semantic version number from a package's RPM Repo.
 ## Example
 
 ```yaml
-      - name: Get Latest Nextcloud Version
+      - name: Get Latest Shibboleth Version
         id: version
         uses: JoePJisc/action-version-from-rpm@v1
         with:
