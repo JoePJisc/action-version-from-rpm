@@ -1,0 +1,86 @@
+# SPDX-FileCopyrightText: 2025 Jisc Services Limited
+# SPDX-FileContributor: Joe Pitt
+#
+# SPDX-License-Identifier: GPL-3.0-only
+---
+name: Get Latest Version from RPM Repo
+author: Joe Pitt (Jisc Services Limited)
+description: Get the latest semantic version number from a package's RPM Repo.
+inputs:
+  mirror_list_url:
+    description: The URL to download the mirror list from.
+    required: true
+  package_name:
+    description: The name of the package to check.
+    required: true
+  package_arch:
+    description: The package architecture to check. Defaults to "x86_64".
+    required: false
+    default: x66_64
+  greater_equal_version:
+    description: The minimum version to accept. Defaults to None.
+    required: false
+  less_than_version:
+    description: The version to accept versions less than. Defaults to None.
+    required: false
+outputs:
+  version:
+    description: The latest version number.
+    value: ${{ steps.get_version.outputs.version }}
+runs:
+  using: composite
+  steps:
+  
+  - name: Get Latest Version
+    id: get_version
+    env:
+      GITHUB_ACTION_PATH: ${{ github.action_path }}
+      INPUT_mirror_list_url: ${{ inputs.mirror_list_url }}
+      INPUT_package_name: ${{ inputs.package_name }}
+      INPUT_package_arch: ${{ inputs.package_arch }}
+      INPUT_greater_equal_version: ${{ inputs.greater_equal_version }}
+      INPUT_less_than_version: ${{ inputs.less_than_version }}
+    shell: python
+    run: |
+      from os import getenv
+      from os.path import abspath, join
+      import sys
+
+      sys.path.insert(1, abspath(join(getenv("GITHUB_ACTION_PATH", "."), "lib")))
+
+      from get_latest_version.rpm import get_latest_from_rpm_repo
+      from semver import Version
+
+      greater_equal_version = None
+      if (
+          getenv("INPUT_greater_equal_version") is not None
+          and len(getenv("INPUT_greater_equal_version")) >= 5
+      ):
+          greater_equal_version = Version.parse(getenv("INPUT_greater_equal_version"))
+
+      less_than_version = None
+      if (
+          getenv("INPUT_less_than_version") is not None
+          and len(getenv("INPUT_less_than_version")) >= 5
+      ):
+          less_than_version = Version.parse(getenv("INPUT_less_than_version"))
+
+      version = get_latest_from_rpm_repo(
+          getenv("INPUT_mirror_list_url"),
+          getenv("INPUT_package_name"),
+          package_arch=getenv("INPUT_package_arch", "x86_64"),
+          greater_equal_version=greater_equal_version,
+          less_than_version=less_than_version,
+      )
+
+      with open(getenv("GITHUB_OUTPUT"), "a", encoding="utf-8") as f:
+          f.write(f"version={version}\n")
+
+  - name: Print Version
+    id: print
+    run: |
+      echo "Latest version ${{ steps.get_version.outputs.version }}"
+    shell: bash
+branding:
+  color: blue
+  icon: disc
