@@ -16,7 +16,7 @@ inputs:
   package_arch:
     description: The package architecture to check. Defaults to "x86_64".
     required: false
-    default: x66_64
+    default: x86_64
   greater_equal_version:
     description: The minimum version to accept. Defaults to None.
     required: false
